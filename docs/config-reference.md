@@ -19,7 +19,7 @@ At the most basic level, setting up JBrowse consists of:
 
 Both the JBrowse code and these data files must be in a location where the web server can serve them to users.  Then, a user pointing their web browser at the appropriate URL for the index.html file in the JBrowse directory will see the JBrowse interface, including sequence and feature tracks reflecting the data source.
 
-Reference sequence data should be added first (using <tt>prepare-refseqs.pl</tt>`), followed by annotation data. Once all of annotation data has been added, use <tt>generate-names.pl</tt> to make the feature names searchable.
+Reference sequence data should be added first (using `prepare-refseqs.pl`), followed by annotation data. Once all of annotation data has been added, use `generate-names.pl` to make the feature names searchable.
 
 ## Making a New JBrowse
 
@@ -44,7 +44,7 @@ Reference sequence data should be added first (using <tt>prepare-refseqs.pl</tt>
 
 1. Run the automated-setup script, <code>./setup.sh</code>, which will attempt to install all of JBrowse's (modest) prerequisites for you in the <code>jbrowse/</code> directory itself.  Note that <code>setup.sh</code> should not be run as root or with <code>sudo</code>.
 
-1. Visit http://your.machine.address/jbrowse/index.html?data=sample_data/json/volvox.  If you can see the included Volvox example data, you are ready to configure JBrowse to show your own data!  The [Getting Started with JBrowse Tutorial](http://jbrowse.org/code/latest-release/docs/tutorial/) provides a very basic step-by-step guide to formatting your own data, and in-depth configuration reference information can be found on this page.
+1. Visit http://your.machine.address/jbrowse/index.html?data=sample_data/json/volvox.  If you can see the included Volvox example data, you are ready to configure JBrowse to show your own data!  The [Getting Started with JBrowse Tutorial](tutorial/) provides a very basic step-by-step guide to formatting your own data, and in-depth configuration reference information can be found on this page.
 
 
 Note: if there is an error installing the perl pre-requisites, and you get an error in your setup.log such as "/home.local/username/.cpanm/build.log: No such file or directory at /loader/0x10b108f0/App/cpanminus/script.pm line 224."
@@ -84,12 +84,19 @@ As an example, the trackList.json file might have something like this. Here is a
 
 The specifics of this configuration are not essential, we are specifying an array of tracks in a trackList.json style, and each track is an object that includes some parameters like the urlTemplate to refer to the location of the BAM file on the server relative to the data directory, the color of the features, etc.
 
-#### Considerations for the JSON format
+#### Notes on the JSON format
 
 * Nested objects are specified using typical JSON format, using curly brackets
 * Boolean values (true, false) should remain unquoted
 * Numbers should remain unquoted
-* Functions do remain quoted however e.g. "style": { "color": "function() { /* your code here */ }" }
+* Functions remain quoted e.g.
+    ```json
+    { "style":
+        {
+            "color": "function() { /* your code here */ }"
+        }
+    }
+    ```
 * JSON strings should not contain line breaks (see Text .conf format for info on multiline callbacks)
 * Configuration values can be stored in both jbrowse_conf.json or in trackList.json (or conf files) i.e. the trackList.json does not only have to contain tracks, can contain other config entries
 
@@ -99,15 +106,16 @@ JBrowse 1.11.0 introduced support for a new text-based configuration format that
 
 This text configuration format can be used to specify
 
-* general configuration options (i.e. jbrowse.conf [| [1]([#General_configuration_options)]])
-* track-specific options (i.e. tracks.conf [| [2]([#Example_SNPCoverage_Configuration)]])
-* standalone files with extra code (i.e. functions.conf [| [3]([#Including_external_files_and_functions_in_trackList.json)]]).
+* general configuration options (i.e. jbrowse.conf) [[1]([#General_configuration_options)]
+* track-specific options (i.e. tracks.conf) [[2]([#Example_SNPCoverage_Configuration)]
+* standalone files with extra code (i.e. functions.conf) [[3]([#Including_external_files_and_functions_in_trackList.json)]
 
 The text format has several benefits, including the ability to specify multi-line callbacks. Example:
 
 ```
  # BAM track with a new callback
- [ storeClass  = JBrowse/Store/SeqFeature/BAM
+ [tracks.mytrack]
+ storeClass  = JBrowse/Store/SeqFeature/BAM
  type        = JBrowse/View/Track/Alignments2
  urlTemplate = myfile.bam
  key         = My BAM track
@@ -117,30 +125,33 @@ The text format has several benefits, including the ability to specify multi-lin
   }
 ```
 
-### Considerations for the text-based .conf format
+### Notes on the `.conf` format
 
-* Comments should start with #
-* The section labels, e.g. [tracks.testtrack](tracks.mytrack]) defines an identifier for the track named testtrack, so you should not have dots in your identifier, e.g. don't use something like this [* Don't quote the values in the file, e.g key=My BAM track, not key="My BAM track"
+* Comments should start with `#`
+* Dots in section labels are structurally significant. For example, `[tracks.testtrack]` defines an identifier for the track named testtrack, so you should not have dots in your identifier, e.g. don't use something like `[tracks.test.track]`
+* Don't quote the values in the file, e.g `key=My BAM track`, not `key="My BAM track"`
 * Nested values can specified using 'dot' notation, e.g. "style.color"
 * A "section" can be specified with square brackets, e.g. [trackMetadata](tracks.test.track]) will create the config variable trackMetadata and the values in the section are added to it.
-* Extra JSON values can be specified in the conf file using the syntax json:{...} (see [| [4]([#Customizing_Right-click_Context_Menus)]] for example)
-* Very large .conf files (thousands of lines) files can take longer to parse than equivalent JSON
+* Extra JSON values can be specified in the conf file using the syntax `json:{...}` (see [[4]([#Customizing_Right-click_Context_Menus)] for example)
+* Very large .conf files (thousands of lines) files can take longer to parse than equivalent JSON. For extremely large configurations, consider using JSON.
 * An array of values can be built up over multiple lines e.g.
-     [     sources =
+    ```
+    [trackMetadata]
+    sources =
         + data/mymeta.csv
         + data/more_meta.csv
-
+    ```
 
 ### Callback-function specific considerations for the text-based .conf format
 
-* Comments inside callbacks can use the /* */ format but not the // format
+* Comments inside callbacks can use the `/* */` format but not the `//` format
 * All lines of a multi-line callback should be spaced away from the left-most column, including the closing bracket (see the style.color example above)
 * There should be no blank lines inside a multi-line callback
-* Refer to [[#Including_external_files_and_functions_in_trackList.json | [5](trackMetadata])]] for more info on multi-line functions
+* Refer to [[5](#Including_external_files_and_functions_in_trackList.json)] for more info on multi-line functions
 
 ### Configuration loading details
 
-When your web browser loads a page containing JBrowse, and JBrowse starts, the following steps are done
+When your web browser loads a page containing JBrowse, and JBrowse starts, it follows the following steps
 
 * In index.html, read the URL params (e.g. query params like &data= and &tracks, &loc=, etc.)
 * In index.html, create a JSON blob using URL params and pass them to the Browser.js constructor which you can see on index.html
@@ -155,13 +166,13 @@ The configuration system then merges all this information, e.g. from the URL par
 
 Generally this happens all seamlessly, and both the text-based .conf format and .json config files can co-exist. That is because anything that can be written as a .conf file can also be written as a .json, they are both parsed on the client side into config objects.
 
-=Reference Sequences=
+## Reference Sequences
 
-The reference sequences on which the browser will display annotations, and which provide a common coordinate system for all tracks. At a close enough zoom level, the sequence bases are visible in the "Reference Sequence" track.
+The reference sequences are the sequences upon which the browser will display annotations, and which provide a common coordinate system for all tracks. At a close enough zoom level, the sequence bases are visible in the "Reference Sequence" track.
 
 The exact interpretation of "reference sequence" will depend on how you are using JBrowse.  For a model organism genome database, each reference sequence would typically represent a chromosome or a [contig](http://en.wikipedia.org/wiki/Contig). Before any feature or image tracks can be displayed in JBrowse, the reference sequences must be defined using the prepare-refseqs.pl formatting tool.
 
-## Reference Sequence Selector Configuration
+### Reference Sequence Selector Configuration
 
 JBrowse displays a dropdown selector for changing reference sequences.
 
@@ -186,13 +197,11 @@ Supported values for refSeqOrder include
 
 One instance in which refSeqOrder is particularly useful is in displaying annotations on early-stage, incomplete genomic assemblies: to display the N biggest contigs in the assembly in the reference sequence selector dropdown, one can set <code>refSeqOrder</code> to 'length descending', and set <code>refSeqSelectorMaxSize</code> to N.
 
-## prepare-refseqs.pl
+### prepare-refseqs.pl
 
 This script is used to format sequence data for use by JBrowse, and must be run before adding other tracks.  In addition to formatting the sequence data, this script creates a track called "DNA" that displays the reference sequence.  The simplest way to use it is with the --fasta option, which uses a single sequence or set of reference sequences from a file:
 
-```
- bin/prepare-refseqs.pl --fasta <fasta file> [options]
- ```
+    bin/prepare-refseqs.pl --fasta <fasta file> [options]
 
 If the file has multiple sequences (e.g. multiple chromosomes), each sequence will become a reference sequence by default. You may switch between these sequences by selecting the sequence of interest via the pull-down menu to the right of the large "zoom in" button.
 
@@ -201,13 +210,16 @@ You may use any alphabet you wish for your sequences (i.e., you are not restrict
 In addition to reading from a fasta file, prepare-refseqs.pl can read sequences from a gff file or a database. In order to read fasta sequences from a database, a config file must be used.
 
 Syntax used to import sequences from gff files:
- bin/prepare-refseqs.pl --gff <gff file with sequence information> [
+
+    bin/prepare-refseqs.pl --gff <gff file with sequence information> [options]
+
 Syntax used to import sequences with a config file:
- bin/prepare-refseqs.pl --conf <config file that references a database with sequence information> --[refs|refid](options]) <reference sequences> [
 
-Syntax used to import a indexed fasta(i.e. a fasta file where you run `samtools faidx yourfile.fa` which outputs yourfile.fa.fai)
+    bin/prepare-refseqs.pl --conf <config file that references a database with sequence information> --[refs|refid](options]) <reference sequences> [options]
 
- bin/prepare-refseqs.pl --indexed_fasta yourfile.fa
+Syntax used to import a indexed fasta (i.e. a fasta file where you run `samtools faidx yourfile.fa` which outputs yourfile.fa.fai)
+
+    bin/prepare-refseqs.pl --indexed_fasta yourfile.fa
 
 This will copy yourfile.fa and yourfile.fa.fai to the data directory
 
